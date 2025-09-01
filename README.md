@@ -34,14 +34,27 @@ in your .bashrc file. Keep in mind, that HEFFTE requires FFTW to install correct
 
 #### Installation of the analysis code
 
-When Heffte is available, install the analysis code using
+When Heffte is available, install the analysis code using the following commands:
 
+
+on DAINT:
 ```shell
 git clone https://github.com/olavril/sphexa-analysis.git
 cd sphexa-analysis
 mkdir build
 cd build
 CC
+make sphexa-analysis
+cp main/src/sphexa_analysis <executable-path>
+```
+
+on HELIX:
+```shell
+git clone https://github.com/olavril/sphexa-analysis.git
+cd sphexa-analysis
+mkdir build
+cd build
+CC=mpicc CXX=mpicxx cmake -DCMAKE_CUDA_ARCHITECTURES=90 -DCMAKE_CUDA_FLAGS=-ccbin=mpicxx -S ..
 make sphexa-analysis
 cp main/src/sphexa_analysis <executable-path>
 ```

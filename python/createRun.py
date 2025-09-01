@@ -85,7 +85,7 @@ pipeline["volumeSF"]        = True
 SFs = {}
 SFs["order"]                = 2
 SFs["numBins"]              = 1000
-SFs["#Connections"]         = 2
+SFs["#Connections"]         = 2000000
 
 
 createRunFile(settings,checkpoints,pipeline,SFs)

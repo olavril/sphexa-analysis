@@ -1,5 +1,6 @@
 # sphexa-analysis
-This is an anlysis pipeline for simulations created with the sphexa simulation code.
+
+This is an anlysis pipeline for simulations created with the [sphexa](https://github.com/sphexa-org/sphexa) simulation code.
 
 # Usage
 

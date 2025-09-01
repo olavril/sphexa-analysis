@@ -17,8 +17,7 @@ if(CMAKE_CUDA_COMPILER)
     add_executable(${exename}-cuda main.cpp)
     target_include_directories(${exename}-cuda PUBLIC ${CMAKE_BINARY_DIR}/main/src)
     target_compile_definitions(${exename}-cuda PRIVATE USE_CUDA)
-    target_link_libraries(${exename}-cuda PRIVATE cstone_gpu io OpenMP::OpenMP_CXX
-        ${MPI_CXX_LIBRARIES} CUDA::cudart)
+    target_link_libraries(${exename}-cuda PRIVATE cstone_gpu io OpenMP::OpenMP_CXX)
     enableGpuDirect(${exename}-cuda)
     install(TARGETS ${exename}-cuda RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

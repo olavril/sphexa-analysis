@@ -4,6 +4,8 @@ This is an anlysis pipeline for simulations created with the [sphexa](https://gi
 
 # Usage
 
+Utility scripts for easier usage can be found in the python folder.
+
 
 # Installation
 

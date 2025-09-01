@@ -1,6 +1,6 @@
 # sphexa-analysis
 
-This is an analysis pipeline for simulations created with the [sphexa](https://github.com/sphexa-org/sphexa) simulation code. It can compute PDFs, power spectra and structure functions using bothvolume- and mass-weighted statistics. It can also plot slices of the box.
+This is an analysis pipeline for simulations created with the [sphexa](https://github.com/sphexa-org/sphexa) simulation code. It can compute PDFs, power spectra and structure functions using both volume- and mass-weighted statistics. It can also plot slices of the box.
 
 # Usage
 

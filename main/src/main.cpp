@@ -71,12 +71,12 @@ int main(int argc, char** argv){
     }
     // setup inputs
     if (parser.exists("-ftle") || parser.exists("--ftle") || parser.exists("-FTLE") || parser.exists("--FTLE")){ftleBool = true; customSetup=true;}
-    if (parser.exists("-massPDF") || parser.exists("--masspdf") || parser.exists("-MassPdf") || parser.exists("--Masspdf")){massPDFBool = true; customSetup=true;}
-    if (parser.exists("-plotSlices") || parser.exists("--plotslices") || parser.exists("-PlotSlices") || parser.exists("--Plotslices")){plotSlicesBool = true; customSetup=true;}
-    if (parser.exists("-volumePDF") || parser.exists("--volumepdf") || parser.exists("-VolumePdf") || parser.exists("--Volumepdf")){volumePDFBool = true; customSetup=true;}
-    if (parser.exists("-ps") || parser.exists("--PS") || parser.exists("-powerspectrum") || parser.exists("--powerSpectrum")){powerSpectrumBool = true; customSetup=true;}
-    if (parser.exists("-massSF") || parser.exists("--MassSF") || parser.exists("-masssf") || parser.exists("--Masssf")){massSFBool = true; customSetup=true;}
-    if (parser.exists("-volSF") || parser.exists("--volumeSF") || parser.exists("-volumesf") || parser.exists("--Volsf")){volumeSFBool = true; customSetup=true;}
+    if (parser.exists("--massPDF") || parser.exists("--masspdf") || parser.exists("--MassPdf") || parser.exists("--Masspdf")){massPDFBool = true; customSetup=true;}
+    if (parser.exists("--plotSlices") || parser.exists("--plotslices") || parser.exists("--PlotSlices") || parser.exists("--Plotslices")){plotSlicesBool = true; customSetup=true;}
+    if (parser.exists("--volumePDF") || parser.exists("--volumepdf") || parser.exists("--VolumePdf") || parser.exists("--Volumepdf")){volumePDFBool = true; customSetup=true;}
+    if (parser.exists("--ps") || parser.exists("--PS") || parser.exists("--powerspectrum") || parser.exists("--powerSpectrum")){powerSpectrumBool = true; customSetup=true;}
+    if (parser.exists("--massSF") || parser.exists("--MassSF") || parser.exists("--masssf") || parser.exists("--Masssf")){massSFBool = true; customSetup=true;}
+    if (parser.exists("--volSF") || parser.exists("--volumeSF") || parser.exists("--volumesf") || parser.exists("--Volsf")){volumeSFBool = true; customSetup=true;}
 
     // label to name the result folder. If none is provided, "results" is used as the name b default
     const std::string defaultLabel = "";
@@ -89,11 +89,11 @@ int main(int argc, char** argv){
     const int stepNo = parser.get("--stepNo", 0);
     // step number of the checkpoint that should be used for FTLE computation in ftleFile
     const int ftleStepNo = parser.get("--stepNoFTLE", 0);
+
     // number of result bins for the structure functions
     const int sfNumBins = parser.get("--sfBins", 1000);
     // norm value used in SF particle selection
     double sfNorm = 1.0;
-
     // order of the structure function you want to compute
     const int sfOrder = parser.get("--sfOrder", 2);
     // total number of connections that should be computed for the structure functions

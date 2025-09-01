@@ -3,7 +3,7 @@
 """
 Created on Mon Aug  4 13:43:10 2025
 
-@author: hpotter
+@author: Oliver Avril
 """
 
 import numpy as np
@@ -62,19 +62,19 @@ plt.yscale("log")
 plt.xlim(1,max(PS["k"]))
 
 ### plot references
-refpath = "../../../references/"
-k_arepo256, P_arepo256 = np.loadtxt(refpath+"arepo256.txt" ,usecols=(0,1),unpack=True)
-k_arepo256 = k_arepo256/(2*np.pi)
-P_arepo256 = P_arepo256/k_arepo256
-plt.plot(k_arepo256,P_arepo256, color=colors[1],label="AREPO 256")
-k_arepo512, P_arepo512 = np.loadtxt(refpath+"arepo512.txt", usecols=(0,1),unpack=True)
-k_arepo512 = k_arepo512/(2*np.pi)
-P_arepo512 = P_arepo512/k_arepo512
-plt.plot(k_arepo512,P_arepo512, color=colors[2],label="AREPO 512")
-k_gizmo, P_gizmo = np.loadtxt(refpath+"gizmoMFV256.txt", usecols=(0,1),unpack=True)
-k_gizmo = k_gizmo/(2*np.pi)
-P_gizmo = P_gizmo/(k_gizmo**(5/3))
-plt.plot(k_gizmo,P_gizmo, color=colors[3],label="Gizmo 256")
+# refpath = "../../../references/"
+# k_arepo256, P_arepo256 = np.loadtxt(refpath+"arepo256.txt" ,usecols=(0,1),unpack=True)
+# k_arepo256 = k_arepo256/(2*np.pi)
+# P_arepo256 = P_arepo256/k_arepo256
+# plt.plot(k_arepo256,P_arepo256, color=colors[1],label="AREPO 256")
+# k_arepo512, P_arepo512 = np.loadtxt(refpath+"arepo512.txt", usecols=(0,1),unpack=True)
+# k_arepo512 = k_arepo512/(2*np.pi)
+# P_arepo512 = P_arepo512/k_arepo512
+# plt.plot(k_arepo512,P_arepo512, color=colors[2],label="AREPO 512")
+# k_gizmo, P_gizmo = np.loadtxt(refpath+"gizmoMFV256.txt", usecols=(0,1),unpack=True)
+# k_gizmo = k_gizmo/(2*np.pi)
+# P_gizmo = P_gizmo/(k_gizmo**(5/3))
+# plt.plot(k_gizmo,P_gizmo, color=colors[3],label="Gizmo 256")
 
 
 plt.legend()

@@ -37,7 +37,7 @@ in your .bashrc file. Keep in mind, that HEFFTE requires FFTW to install correct
 When Heffte is available, install the analysis code using
 
 ```shell
-git clone
+git clone git@github.com:olavril/sphexa-analysis.git
 cd sphexa-analysis
 mkdir build
 cd build

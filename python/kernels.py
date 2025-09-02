@@ -30,7 +30,3 @@ for i in range(0,len(x)):
     
 mask = y > 0.000088
 plt.plot(x[mask],y[mask])
-
-integral = 4*np.pi*np.sum(y * x**2 * (x[1]-x[0]))
-print(integral)
-print(1/integral)

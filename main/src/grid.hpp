@@ -10,6 +10,7 @@
 
 #include <cassert>
 
+#include "paths.hpp"
 #include "ifile_io_impl.h"
 #include "periodic_conditions.hpp"
 #include "kernel.hpp"
@@ -31,8 +32,6 @@ std::tuple<int,int,int> decomposeGridIndex(const uint64_t GridIndex,
                     const int ixmin,const int ixmax, 
                     const int iymin,const int iymax, 
                     const int izmin,const int izmax);
-std::vector<double> sortGrid(const std::vector<double> data, const int numGridPoints, 
-                            const uint64_t numStoragePoints, const uint64_t StorageSize, const int Rank, const int numRanks);
 
 using namespace sphexa;
 
@@ -72,15 +71,7 @@ std::tuple<std::vector<double>,std::vector<double>,std::vector<double>,std::vect
     uint64_t localBoxSize = static_cast<uint64_t>(AllBoxes[Rank].size[0]) 
                             * static_cast<uint64_t>(AllBoxes[Rank].size[1]) 
                             * static_cast<uint64_t>(AllBoxes[Rank].size[2]);
-    
-    // print sizes of the local Box
-    // if (Rank == 0){
-    //     for (size_t iRank = 0; iRank < numRanks; iRank++){
-    //         std::cout << iRank << ": 0:" << AllBoxes[iRank].low[0] << " - " << AllBoxes[iRank].high[0];
-    //         std::cout << "    1:" << AllBoxes[iRank].low[1] << " - " << AllBoxes[iRank].high[1];
-    //         std::cout << "    2:" << AllBoxes[iRank].low[2] << " - " << AllBoxes[iRank].high[2] << std::endl;
-    //     }
-    // }
+
 
     // communication is only neccessary if there is more than one rank
     if (numRanks > 1){
@@ -107,16 +98,6 @@ std::tuple<std::vector<double>,std::vector<double>,std::vector<double>,std::vect
             }
         }
 
-
-
-        // for (size_t iRank = 0; iRank < numRanks; iRank++){
-        //     if (Rank == iRank){
-        //         for (int i = 0; i < numRanks; i++){
-        //             std::cout << Rank << ": Contributing to Rank" << i << ": " << NumContributingParticles[i] << std::endl;
-        //         }
-        //     }
-        //     MPI_Barrier(MPI_COMM_WORLD);
-        // }
 
         // ------------------------------------------------------------------------------------------------------------------------
         // communicate how many contributing particles there are for each rank ----------------------------------------------------
@@ -149,16 +130,6 @@ std::tuple<std::vector<double>,std::vector<double>,std::vector<double>,std::vect
             localNumContrParticles += RecvBufferUINT;
             NumRecv[RecvRank] = RecvBufferUINT;
         }
-        // for (size_t iRank = 0; iRank < numRanks; iRank++){
-        //     if (Rank == iRank){
-        //         std::cout << Rank << ": number of particles that contribute to this rank: " << localNumContrParticles << std::endl;
-        //         for (size_t iRank = 0; iRank < numRanks; iRank++){
-        //             std::cout << " " << NumRecv[iRank];
-        //         }
-        //         std::cout << std::endl;
-        //     }
-        //     MPI_Barrier(MPI_COMM_WORLD);
-        // }
 
 
         // ------------------------------------------------------------------------------------------------------------------------
@@ -625,57 +596,6 @@ std::tuple<std::vector<double>,std::vector<double>,std::vector<double>,std::vect
     return std::make_tuple(vxGrid, vyGrid, vzGrid, rhoGrid, ftleGrid, ncGrid);
 }
 
-
-
-// function to save grid data to file
-void SaveGrid(const std::vector<double> vxGrid, const std::vector<double> vyGrid, const std::vector<double> vzGrid, const std::vector<double> rhoGrid, 
-            const std::vector<double> ncGrid, const int numGridPoints, const double time, const bool NearestNeighbor,
-            const std::string SimFile, const std::string GridFile,
-            const int Rank, const int numRanks)
-{      
-    // storing the nearest Neighbor setting
-    double NN = 0;
-    if (NearestNeighbor){NN=1;}
-    // number of storage grid points on this rank
-    uint64_t numStoragePoints = static_cast<uint64_t>(std::floor(std::pow(static_cast<double>(numGridPoints), 3) / static_cast<double>(numRanks)));
-    uint64_t StorageSize      = numStoragePoints;
-    if (Rank == numRanks-1){StorageSize = static_cast<uint64_t>(std::pow(static_cast<double>(numGridPoints), 3) - Rank*numStoragePoints);}
-    //std::cout << Rank << " StorageSize=" << StorageSize << std::endl;
-    // assign the data into one 1D vector for storage
-    std::vector<double> vxStorage  = sortGrid(vxGrid,  numGridPoints,numStoragePoints,StorageSize, Rank,numRanks);
-    std::vector<double> vyStorage  = sortGrid(vyGrid,  numGridPoints,numStoragePoints,StorageSize, Rank,numRanks);
-    std::vector<double> vzStorage  = sortGrid(vzGrid,  numGridPoints,numStoragePoints,StorageSize, Rank,numRanks);
-    std::vector<double> rhoStorage = sortGrid(rhoGrid, numGridPoints,numStoragePoints,StorageSize, Rank,numRanks);
-    std::vector<double> ncStorage  = sortGrid(ncGrid,  numGridPoints,numStoragePoints,StorageSize, Rank,numRanks);
-
-    // HDF5 writer
-    auto writer = makeH5PartWriter(MPI_COMM_WORLD);
-    writer->addStep(0, vxStorage.size(), GridFile);
-    // write information about the computation
-    //std::cout << Rank << ":     storing attributes" << std::endl;
-    writer->stepAttribute("time", &time, 1);
-    writer->stepAttribute("nearest neighbor",  &NN, 1);
-    // write the actual data
-    //std::cout << Rank << ":     storing vx" << std::endl;
-    writer->writeField("vx",  vxStorage.data(), 0);
-    //std::cout << Rank << ":     storing vy" << std::endl;
-    writer->writeField("vy",  vyStorage.data(), 0);
-    //std::cout << Rank << ":     storing vz" << std::endl;
-    writer->writeField("vz",  vzStorage.data(), 0);
-    //std::cout << Rank << ":     storing rho" << std::endl;
-    writer->writeField("rho", rhoStorage.data(), 0);
-    //std::cout << Rank << ":     storing nc" << std::endl;
-    writer->writeField("nc",  ncStorage.data(), 0);
-    // close the writer
-    writer->closeStep();
-    //std::cout << Rank << " results saved" << std::endl;
-
-    // write data to file
-    // TODO
-
-    return;
-}
-
 // check to intervals for overlap
 // this function does take periodic conditions into account
 // it is assumed, that the borders of the intervals are included [min,max] 
@@ -816,13 +736,6 @@ std::tuple<int,int,int> decomposeGridIndex(const uint64_t GridIndex,
     const uint64_t ySize = static_cast<uint64_t>(iymax - iymin + 1);
     const uint64_t zSize = static_cast<uint64_t>(izmax - izmin + 1);
 
-    // for my order 
-    // ix = std::floor((double)(GridIndex) / (double)(ySize*zSize));
-    // // assert(("ERROR during decomposeGridIndex: GridIndex must be larger or equal to ix*ySize*zSize", GridIndex >= ix*ySize*zSize));
-    // iy = std::floor((double)(GridIndex - ix*ySize*zSize) / (double)(zSize));
-    // // assert(("ERROR during decomposeGridIndex: GridIndex must be larger or equal to ix*ySize*zSize + iy*zSize", GridIndex >= ix*ySize*zSize + iy*zSize));
-    // iz = static_cast<int>(GridIndex - ix*ySize*zSize - iy*zSize);
-
     // for Osmans order
     iz = std::floor((double)(GridIndex) / (double)(xSize*ySize));
     // assert(("ERROR during decomposeGridIndex: GridIndex must be larger or equal to ix*ySize*zSize", GridIndex >= ix*ySize*zSize));
@@ -899,120 +812,74 @@ uint64_t getGlobalStorageID(const int ix, const int iy, const int iz, const int 
     return ix * std::pow(numGridPoints,2) + iy*numGridPoints + iz;
 }
 
-// sort a distributed grid data vector such that the ranks hold a sorted version of a local section of the grid
-// used for saving the grid
-std::vector<double> sortGrid(const std::vector<double> data, const int numGridPoints, const uint64_t numStoragePoints, 
-                            const uint64_t StorageSize, const int Rank, const int numRanks)
-{
+
+// function to save the grid to file in case it is needed for something else
+void saveGrid(const std::vector<double>&  vx, const std::vector<double>& vy, const std::vector<double>& vz,
+              const std::vector<double>& rho, const std::vector<double>& nc, const std::vector<double>& ftle,
+              filePathsCls filePaths, const double time, const double ftleTime,
+              const std::string simFile, const int stepNo, const std::string ftleFile, const int ftleStepNo,
+              const bool nearestNeighbor, const int numGridPoints, const int rank, const int numRanks)
+{   
+    // decide if FTLE stuff needs to be saved
+    const bool useFTLE = ftle.size() > 0;
+    // size of the Box in 1 dimension
+    const double boxSize = 1.0;
+    // step size of the grid in 1 dimension
+    const double gridStep = boxSize / static_cast<double>(numGridPoints); 
+    // get local grid range
     heffte::box3d<> AllIndizes({0,0,0},{numGridPoints-1,numGridPoints-1,numGridPoints-1});
     std::array<int,3> ProcessorGrid = heffte::proc_setup_min_surface(AllIndizes, numRanks);
     std::vector<heffte::box3d<>> AllBoxes = heffte::split_world(AllIndizes,ProcessorGrid);
+    const int ixmin = AllBoxes[rank].low[0];
+    const int ixmax = AllBoxes[rank].high[0];
+    const int iymin = AllBoxes[rank].low[1];
+    const int iymax = AllBoxes[rank].high[1];
+    const int izmin = AllBoxes[rank].low[2];
+    const int izmax = AllBoxes[rank].high[2];
 
-    // storage for the result vector
-    std::vector<double> result(StorageSize);
-
-    // volume of the box that is currently stored on this rank
-    int xmin = AllBoxes[Rank].low[0];
-    int xmax = AllBoxes[Rank].high[0];
-    int ymin = AllBoxes[Rank].low[1];
-    int ymax = AllBoxes[Rank].high[1];
-    int zmin = AllBoxes[Rank].low[2];
-    int zmax = AllBoxes[Rank].high[2];
-
-    // global index range of this rank
-    uint64_t minIndex = static_cast<uint64_t>(Rank) * numStoragePoints;
-    uint64_t maxIndex = minIndex + StorageSize - 1;
-    // volume of the box that should be stored on this rank
-    int ixminStorage = std::floor(static_cast<double>(minIndex)                                          / static_cast<double>(std::pow(numGridPoints,2)));
-    int iyminStorage = std::floor(static_cast<double>(minIndex - ixminStorage*std::pow(numGridPoints,2)) / static_cast<double>(numGridPoints));
-    int izminStorage = (minIndex % (numGridPoints*numGridPoints)) % numGridPoints;
-
-    int ixmaxStorage = std::floor(static_cast<double>(maxIndex)                                          / static_cast<double>(std::pow(numGridPoints,2)));
-    int iymaxStorage = std::floor(static_cast<double>(maxIndex - ixmaxStorage*std::pow(numGridPoints,2)) / static_cast<double>(numGridPoints));
-    int izmaxStorage = (maxIndex % (numGridPoints*numGridPoints)) % numGridPoints;
-    //std::cout << Rank << ": minIndex="<< minIndex << " maxIndex=" << maxIndex << " holding x:" << ixminStorage << "-" << ixmaxStorage << " y:"  << iyminStorage << "-" << iymaxStorage << " z:" << izminStorage << "-" << izmaxStorage << " for storage" << std::endl;
-
-    // number of local points on this rank that will be sent to each rank
-    std::vector<uint64_t> numSendPoints(numRanks, 0);
-    // find out how many of the local points on this rank belong to which rank
-    for (size_t i = 0; i < data.size(); i++){
-        auto [ix,iy,iz] = decomposeGridIndex(i, 
-                                    AllBoxes[Rank].low[0],AllBoxes[Rank].high[0],
-                                    AllBoxes[Rank].low[1],AllBoxes[Rank].high[1],
-                                    AllBoxes[Rank].low[2],AllBoxes[Rank].high[2]);
-        uint64_t StorageID = getGlobalStorageID(ix,iy,iz, numGridPoints);
-        int iRank = std::floor(static_cast<double>(StorageID) / static_cast<double>(numStoragePoints));
-        numSendPoints[iRank]++;
+    // construct grid position vectors
+    std::vector <double> x(vx.size(), 0.0), y(vx.size(), 0.0), z(vx.size(), 0.0);
+    for (size_t i = 0; i < vx.size(); i++){
+        auto [ix, iy, iz] = decomposeGridIndex(i, ixmin,ixmax,iymin,iymax,izmin,izmax);
+        x[i] = getGridPosition(ix,gridStep);
+        y[i] = getGridPosition(iy,gridStep);
+        z[i] = getGridPosition(iz,gridStep);
     }
 
-    // number of storage points that will be recieved to each rank
-    std::vector<uint64_t> numRecvPoints(numRanks, 0);
-    std::vector<uint64_t> NumberBuffer(numRanks, 0);
-    // communicate which rank will send how many particles to each other rank
-    for (size_t iRank = 0; iRank < numRanks; iRank++){
-        if (Rank == iRank){
-            for(size_t i = 0; i < numRanks; i++){NumberBuffer[i] = numSendPoints[i];}
-        }
-        MPI_Bcast((void *)&NumberBuffer[0], numRanks, MPI_UNSIGNED_LONG, iRank,MPI_COMM_WORLD);
-        numRecvPoints[iRank] = NumberBuffer[Rank];
-    }
+    // create the filepath where the grid should be stored
+    const std::string path = filePaths.getResultPath("grid.h5");
 
-    // create send buffers on this rank
-    std::vector<uint64_t> AssignedPoints(numRanks, 0);
-    std::vector<std::vector<double>> SendDataBuffers(numRanks);
-    std::vector<std::vector<uint64_t>> SendPositionBuffers(numRanks);
-    for(size_t i = 0; i < numRanks; i++){
-        SendDataBuffers[i].resize(numSendPoints[i]);
-        SendPositionBuffers[i].resize(numSendPoints[i]);
-    }
-    // sort the data into the send buffers
-    for (size_t i = 0; i < data.size(); i++){
-        auto [ix,iy,iz] = decomposeGridIndex(i, 
-                                    AllBoxes[Rank].low[0],AllBoxes[Rank].high[0],
-                                    AllBoxes[Rank].low[1],AllBoxes[Rank].high[1],
-                                    AllBoxes[Rank].low[2],AllBoxes[Rank].high[2]);
-        uint64_t StorageID = getGlobalStorageID(ix,iy,iz, numGridPoints);
-        int iRank = std::floor(static_cast<double>(StorageID) / static_cast<double>(numStoragePoints));
-        // assign to send buffer
-        SendDataBuffers[iRank][AssignedPoints[iRank]]     = data[i];
-        SendPositionBuffers[iRank][AssignedPoints[iRank]] = StorageID;
-        AssignedPoints[iRank]++;
-    }
+    // nearest neighbor int
+    int NN = 0;
+    if (nearestNeighbor){NN = 1;}
 
-    // recieve Buffers
-    std::vector<double>   RecvDataBuffer;
-    std::vector<uint64_t> RecvPositionBuffer;
 
-    //communicate the data
-    for (size_t iRank = 0; iRank < numRanks; iRank++){
-        MPI_Barrier(MPI_COMM_WORLD);
-        // rank to which this rank will send data
-        int SendRank = correct_periodic_cond(Rank+iRank, numRanks);
-        // rank from which this rank will recieve data
-        int RecvRank = correct_periodic_cond(Rank-iRank, numRanks);
-        // resize the buffers
-        RecvDataBuffer.resize(numRecvPoints[RecvRank]);
-        RecvPositionBuffer.resize(numRecvPoints[RecvRank]);
-        // communication
-        if (iRank == 0){
-            RecvDataBuffer     = SendDataBuffers[Rank];
-            RecvPositionBuffer = SendPositionBuffers[Rank];
-        } else {
-            int numParticlesToSend = numSendPoints[SendRank];
-            int numParticlesToRecv = numRecvPoints[RecvRank];
-            MPI_Sendrecv((void *)&SendDataBuffers[SendRank][0], numParticlesToSend, MPI_DOUBLE, SendRank, 1, 
-                         (void *)&RecvDataBuffer[0], numParticlesToRecv, MPI_DOUBLE, RecvRank, 1,
-                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Sendrecv((void *)&SendPositionBuffers[SendRank][0], numParticlesToSend, MPI_UNSIGNED_LONG, SendRank, 1, 
-                         (void *)&RecvPositionBuffer[0], numParticlesToRecv, MPI_UNSIGNED_LONG, RecvRank, 1,
-                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
-        // assign the data
-        //#pragma omp parallel for
-        for (size_t i = 0; i < RecvDataBuffer.size(); i++){
-            result[RecvPositionBuffer[i]-minIndex] = RecvDataBuffer[i];
-        }
+    // h5 file writer
+    auto writer = makeH5PartWriter(MPI_COMM_WORLD);
+    // write the data to a new step
+    writer->addStep(0, vx.size(), path);
+    // write header information
+    writer->stepAttribute("time",            &time, 1);
+    writer->stepAttribute("nearestNeighbor", &NN, 1);
+    writer->stepAttribute("stepNo",          &stepNo, 1);
+    writer->stepAttribute("numGridPoints",   &numGridPoints, 1);
+    writer->stepAttribute("gridStep",        &gridStep, 1);
+    if (useFTLE){
+        writer->stepAttribute("ftleTime",   &ftleTime, 1);
+        writer->stepAttribute("ftleSTepNo", &ftleStepNo, 1);
     }
-
-    return result;
+    // writing the data
+    writer->writeField(  "x",   x.data(), 0);
+    writer->writeField(  "y",   y.data(), 0);
+    writer->writeField(  "z",   z.data(), 0);
+    writer->writeField( "vx",  vx.data(), 0);
+    writer->writeField( "vy",  vy.data(), 0);
+    writer->writeField( "vz",  vz.data(), 0);
+    writer->writeField("rho", rho.data(), 0);
+    writer->writeField( "nc",  nc.data(), 0);
+    if (useFTLE){
+        writer->writeField("ftle", ftle.data(), 0);
+    }
+    // close the writer
+    writer->closeStep();
 }

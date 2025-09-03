@@ -49,6 +49,7 @@ int main(int argc, char** argv){
     // map the simulation data to a grid
     bool gridMappingBool = false;
     bool nearestNeighbor = false;
+    bool saveGridBool    = false;
     // plot slices of the grid
     bool plotSlicesBool = false;
     // run the volume-weighted PDF computation
@@ -72,6 +73,7 @@ int main(int argc, char** argv){
     // setup inputs
     if (parser.exists("-ftle") || parser.exists("--ftle") || parser.exists("-FTLE") || parser.exists("--FTLE")){ftleBool = true; customSetup=true;}
     if (parser.exists("--massPDF") || parser.exists("--masspdf") || parser.exists("--MassPdf") || parser.exists("--Masspdf")){massPDFBool = true; customSetup=true;}
+    if (parser.exists("--saveGrid") || parser.exists("--savegrid") || parser.exists("--SaveGrid") || parser.exists("-saveGrid")){saveGridBool = true; customSetup=true;}
     if (parser.exists("--plotSlices") || parser.exists("--plotslices") || parser.exists("--PlotSlices") || parser.exists("--Plotslices")){plotSlicesBool = true; customSetup=true;}
     if (parser.exists("--volumePDF") || parser.exists("--volumepdf") || parser.exists("--VolumePdf") || parser.exists("--Volumepdf")){volumePDFBool = true; customSetup=true;}
     if (parser.exists("--ps") || parser.exists("--PS") || parser.exists("--powerspectrum") || parser.exists("--powerSpectrum")){powerSpectrumBool = true; customSetup=true;}
@@ -108,12 +110,13 @@ int main(int argc, char** argv){
 
     // set the default setup if no custom setup was provided
     if (customSetup){
-        if (plotSlicesBool || volumePDFBool || powerSpectrumBool || volumeSFBool){gridMappingBool=true;}
+        if (saveGridBool || plotSlicesBool || volumePDFBool || powerSpectrumBool || volumeSFBool){gridMappingBool=true;}
     } else {
         ftleBool            = false;
         massPDFBool         = true;
         massSFBool          = true;
         gridMappingBool     = true;
+        saveGridBool        = true;
         plotSlicesBool      = true;
         volumePDFBool       = true;
         powerSpectrumBool   = true;
@@ -418,6 +421,13 @@ int main(int argc, char** argv){
         ftleGrid    = std::get<4>(temp);
         ncGrid      = std::get<5>(temp);
         std::vector<double> vGrid = vector_sqrt(vector_add(vector_pow(vxGrid,2),vector_add(vector_pow(vyGrid,2),vector_pow(vzGrid,2))));
+
+        // save the grid if requested
+        if (saveGridBool){
+            MPI_Barrier(MPI_COMM_WORLD);
+            if (rank == 0){std::cout << "\tsaving the grid" << std::endl;}
+            saveGrid(vxGrid,vyGrid,vzGrid,rhoGrid,ncGrid,ftleGrid,filePaths,time,ftleTime,simFile,stepNo,ftleFile,ftleStepNo,nearestNeighbor,numGridPoints,rank,numRanks);
+        }
 
         MPI_Barrier(MPI_COMM_WORLD);
         auto gridMappingRuntimeStop = std::chrono::high_resolution_clock::now();

@@ -35,6 +35,8 @@ def createRunFile(settings,checkpoints,pipeline,SFs):
             runComm += " --ftle --simFTLE {} --stepNoFTLE {}".format(checkpoints["ftleFile"], checkpoints["ftleStepNo"])
         if (pipeline["massPDF"]):
             runComm += " --massPDF"
+        if (pipeline["saveGrid"]):
+            runComm += " --saveGrid"
         if (pipeline["volumePDF"]):
             runComm += " --volumePDF"
         if (pipeline["plotSlices"]):
@@ -75,6 +77,7 @@ checkpoints["ftleStepNo"]   = 0
 pipeline = {}
 pipeline["FTLE"]            = False
 pipeline["massPDF"]         = True
+pipeline["saveGrid"]        = True
 pipeline["volumePDF"]       = True
 pipeline["plotSlices"]      = True
 pipeline["PS"]              = True
